@@ -41,6 +41,7 @@
   <!-- used for searching stereo spinner -->
   <string name="stereoKey">Stereo</string>
   <string name="bufferSize">Buffer size (in ms)</string>
+  <string name="voiceInput">Voice Input (end transmission with \"out\" or \"over\")</string>
   <string name="bufferSizeHint">Buffer size</string>
   <string name="retry">Enable network retries</string>
   <string name="usePerformanceMode">Performance mode</string>

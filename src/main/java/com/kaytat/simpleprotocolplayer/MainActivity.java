@@ -29,8 +29,11 @@ import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -53,6 +56,11 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -72,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
   AutoCompleteTextView audioPortText;
   ArrayList<String> audioPortList;
   ArrayAdapter<String> audioPortAdapter;
+  EditText voiceInputText;
 
   int sampleRate;
   boolean stereo;
@@ -131,6 +140,27 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
           }
 
         });
+
+    voiceInputText = findViewById(R.id.editTextVoiceInput);
+    voiceInputText.addTextChangedListener(new TextWatcher() {
+
+      @Override
+      public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+      @Override
+      public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+      @Override
+      public void afterTextChanged(Editable s) {
+        String ret = s.toString();
+        if (ret.endsWith(" out") || ret.endsWith(" over")) {
+          Log.w("before UDP", ret);
+          new SendUDPTask().execute(ipAddrText, audioPortText, voiceInputText);
+//          s.clear();
+          Log.w("after UDP", ret);
+        }
+      }
+    });
   }
 
   /**
@@ -532,6 +562,33 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
       } else {
         return NetworkConnection.NON_WIFI_CONNECTED;
       }
+    }
+  }
+
+  static class SendUDPTask extends AsyncTask<EditText, Void, Void> {
+
+    protected Void doInBackground(EditText... args) {
+      DatagramSocket ds = null;
+      try {
+        ds = new DatagramSocket();
+        DatagramPacket dp;
+        String payload = args[2].getText().toString();
+        String destAddr = args[0].getText().toString();
+        String destPort = args[1].getText().toString();
+        dp = new DatagramPacket(payload.getBytes(), args[2].length(), InetAddress.getByName(destAddr), Integer.parseInt(destPort));
+        ds.setBroadcast(true);
+        ds.send(dp);
+        args[2].setText("");
+        return null;
+      } catch (IOException e) {
+        Log.e("UDP exception", e.getMessage());
+      } finally {
+        if (ds != null)
+        {
+          ds.close();
+        }
+      }
+      return null;
     }
   }
 }
